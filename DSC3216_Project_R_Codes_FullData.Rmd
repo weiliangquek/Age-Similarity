@@ -1,0 +1,169 @@
+---
+title: "DSC3216_Project_R_Codes_FullData"
+output: 
+  html_document:
+    toc: yes
+---
+
+#Source Data
+```{r}
+library(readr)
+Feature_reduction_normalised <- read_csv("/Users/weiliangquek/OneDrive/Documents/National University of Singapore/AY2018-19 Year 3 Semester 2/DSC3216 Predictive Analytics in Business/Projects/Data/Feature_reduction_normalised.csv")
+```
+
+#Exclude image_name column from dataset
+```{r}
+library(dplyr)
+Feature_reduction_normalised = select(Feature_reduction_normalised, -image_name)
+```
+
+#Dataset
+```{r}
+names(Feature_reduction_normalised)
+head(Feature_reduction_normalised)
+summary(Feature_reduction_normalised)
+```
+
+#Create random samples
+```{r}
+set.seed(123)
+train_sample <- sample(nrow(Feature_reduction_normalised),nrow(Feature_reduction_normalised)*0.7)
+str(train_sample)
+print(train_sample)
+trainData <- Feature_reduction_normalised [train_sample,]
+testData <- Feature_reduction_normalised [-train_sample,]
+```
+
+#Logistic Regression
+```{r}
+require(foreign)
+require(nnet)
+require(ggplot2)
+require(reshape2)
+require(ISLR)
+library(caret)
+library(e1071)
+facial_logreg <- glm(label ~., data = Feature_reduction_normalised, family = binomial, control = list(maxit = 50))
+summary(facial_logreg)
+trainPred_logreg <- predict(facial_logreg, newdata = trainData, type = 'response')
+logsregPred_train <- ifelse(trainPred_logreg > 0.5,1,0)
+confusionMatrix(table(logsregPred_train, trainData$label))
+testPred_logreg <- predict(facial_logreg, newdata = testData, type = 'response')
+logsregPred_test <- ifelse(testPred_logreg > 0.5,1,0)
+confusionMatrix(table(logsregPred_test, testData$label)) 
+```
+
+#Classification Tree 
+```{r}
+library(party)
+library(caret)
+trainData$label <- as.factor(trainData$label)
+facial_ctree_train <- ctree(label ~ ., data = trainData)
+print(facial_ctree_train)
+plot(facial_ctree_train, type = 'simple')
+plot(facial_ctree_train)
+testData$label <- as.factor(testData$label)
+facial_ctree_test <- ctree(label ~ ., data = testData)
+confusionMatrix(table(predict(facial_ctree_test), testData$label))
+```
+
+#Support Vector Machine (SVM)
+```{r}
+#Used 3 different kernels, select radial as the best option.
+library(e1071)
+library(gmodels)
+
+svm_classifier_linear = svm(formula = label~., data = trainData, type= "C-classification", kernel = "linear")
+svm_pred_linear = predict(svm_classifier_linear, newdata= testData)
+table(svm_pred_linear, testData$label)
+CrossTable(testData$label,svm_pred_linear,prop.chisq= FALSE, prop.c= FALSE, prop.r = FALSE)
+confusionMatrix(table(svm_pred_linear, testData$label), mode = "prec_recall", positive = "1")
+
+svm_classifier_radial = svm(formula = label~., data = trainData, type= "C-classification", kernel = "radial")
+svm_pred_radial = predict(svm_classifier_radial, newdata= testData)
+table(svm_pred_radial, testData$label)
+CrossTable(testData$label,svm_pred_radial,prop.chisq= FALSE, prop.c= FALSE, prop.r = FALSE)
+confusionMatrix(table(svm_pred_radial, testData$label), mode = "prec_recall", positive = "1")
+
+svm_classifier_sigmoid = svm(formula = label~., data = trainData, type= "C-classification", kernel = "sigmoid")
+svm_pred_sigmoid = predict(svm_classifier_sigmoid, newdata= testData)
+table(svm_pred_sigmoid , testData$label)
+CrossTable(testData$label,svm_pred_sigmoid ,prop.chisq= FALSE, prop.c= FALSE, prop.r = FALSE)
+confusionMatrix(table(svm_pred_sigmoid, testData$label), mode = "prec_recall", positive = "1")
+```
+
+#F1-score
+```{r}
+library(MLmetrics)
+logreg <- glm(formula = label ~ .,
+              family = binomial(link = "logit"), data = Feature_reduction_normalised)
+pred <- ifelse(logreg$fitted.values < 0.5, 0, 1)
+F1_Score(y_pred = pred, y_true = Feature_reduction_normalised$label, positive = "0")
+F1_Score(y_pred = pred, y_true = Feature_reduction_normalised$label, positive = "1")
+
+library(party)
+testData$label <- as.factor(testData$label)
+facial_ctree_test <- ctree(label ~ ., data = testData)
+print(facial_ctree_test)
+plot(facial_ctree_test, type = 'simple')
+plot(facial_ctree_test)
+confusionMatrix(table(predict(facial_ctree_test), testData$label))
+
+precision_ctree = (table(predict(facial_ctree_train), trainData$label)[2, "1"])/(table(predict(facial_ctree_train), trainData$label)[2, "1"]+table(predict(facial_ctree_train), trainData$label)[2, "0"])
+recall_ctree = (table(predict(facial_ctree_train), trainData$label)[2, "1"])/((table(predict(facial_ctree_train), trainData$label)[2, "1"])+(table(predict(facial_ctree_train), trainData$label)[1, "1"]))
+
+F1_ctree <- ( 2* precision_ctree * recall_ctree) / (precision_ctree + recall_ctree)
+F1_ctree
+
+library(caret)
+y <- testData$label
+y.factor <- factor(y)
+predictions_svm <- svm_pred_radial 
+predictions.factor_svm <- factor(predictions_svm)
+precision_svm <- posPredValue(predictions.factor_svm, y.factor, positive="1")
+recall_svm <- sensitivity(predictions.factor_svm,y.factor, positive="1")
+
+F1_svm <- ( 2* precision_svm * recall_svm) / (precision_svm + recall_svm)
+F1_svm
+
+```
+
+#ROC curve
+```{r}
+library(ggplot2)
+library(ROCR)
+
+logreg_ROC <- glm(label~., data=Feature_reduction_normalised, family="binomial")
+pred_logreg_1 <- prediction(predict(logreg_ROC), Feature_reduction_normalised$label)
+perf_logreg_ROC <- performance(pred_logreg_1,"tpr","fpr")
+ctree_ROC <- ctree(label ~ ., data = Feature_reduction_normalised)
+pred_ctree_2 <- prediction(predict(ctree_ROC), Feature_reduction_normalised$label)
+perf_ctree_ROC <- performance(pred_ctree_2,"tpr","fpr")
+svm_ROC <- svm(formula = label~., data = Feature_reduction_normalised, type= "C-classification", kernel = "radial")
+predict_svm <- predict(svm_ROC, type = 'response')
+predict_svm
+pred_svm_3 <- prediction(as.numeric(predict_svm), as.numeric(Feature_reduction_normalised$label))
+perf_svm_ROC <- performance(pred_svm_3, 'tpr','fpr')
+
+plot(perf_logreg_ROC, col=4)
+plot(perf_ctree_ROC, add = TRUE, col=7)
+plot(perf_svm_ROC, add = TRUE, col = 3)
+  legend('topright',
+       c('logreg','svm','ctree'),
+       fill=topo.colors(3))
+```
+
+#Speed Test
+```{r}
+library(microbenchmark)
+library(party)
+logreg_spd <- glm(label ~., data = Feature_reduction_normalised, family = binomial, control = list(maxit = 50))
+ctree_spd <- ctree(label ~ ., data = Feature_reduction_normalised)
+svm_spd <- svm(formula = label~., data = Feature_reduction_normalised, type= "C-classification", kernel = "radial")
+speed_test <- microbenchmark('logreg_spd ' = {glm(label ~., data = Feature_reduction_normalised, family = binomial, control = list(maxit = 50))},
+                     'ctree_spd' = {ctree(label ~ ., data = Feature_reduction_normalised)},
+                     'svm_spd' = {svm(formula = label~., data = Feature_reduction_normalised, type= "C-classification", kernel = "radial")}
+)
+
+boxplot(speed_test, unit='ns',log=F,horizontal=T,col=topo.colors(3))
+```
