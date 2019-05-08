@@ -1,5 +1,7 @@
 # Age-Similarity
-Greetings everyone, this is the R codes that my group has used for our project in DSC3216 Predictive Analytics in Business. This is my first attempt in R written for a project with the help of the open source community and my group mates, particularly Goh Jie Da and Te(Tze) Sze Ying.   
+Greetings everyone, this is the R codes that my group has used for our project in DSC3216 Predictive Analytics in Business. This is my first attempt in R written for a project with the help of the open source community and my group mates, particularly Goh Jie Da and Te(Tze) Sze Ying. 
+
+The purpose of the project is to identify a missing child based on the images provided. Therefore, our group decides to construct various models to predict whether the pair of input images are the same person. The models as shown below are only a few of those that we have tested.  
 
 # Source Data
 The dataset has to be first imported into the R program.
