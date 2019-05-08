@@ -1,4 +1,4 @@
-Age-Similarity
+# Age-Similarity
 
 # Acknowledgement
 Greetings everyone, this is the R codes that my group has used for our project in DSC3216 Predictive Analytics in Business. This is my first attempt in R written for a project with the help of the open source community and my group mates, particularly Goh Jie Da and Te(Tze) Sze Ying.   
