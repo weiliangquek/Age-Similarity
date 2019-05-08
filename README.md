@@ -1,9 +1,9 @@
 Age-Similarity
 
-##Acknowledgement
+# Acknowledgement
 Greetings everyone, this is the R codes that my group has used for our project in DSC3216 Predictive Analytics in Business. This is my first attempt in R written for a project with the help of the open source community and my group mates, particularly Goh Jie Da and Te(Tze) Sze Ying.   
 
-#Source Data
+# Source Data
 The dataset has to be first imported into the R program.
 ```
 library(readr)
@@ -11,14 +11,14 @@ Feature_reduction_normalised <- read_csv("C:/Users/Quek Wei Liang/OneDrive/Docum
 head(Feature_reduction_normalised)
 ```
 
-#Exclude image_name column from dataset
+# Exclude image_name column from dataset
 As there is a column "-image_name" that is not required, the column has to be first removed. 
 ```
 library(dplyr)
 Feature_reduction_normalised = select(Feature_reduction_normalised, -image_name)
 ```
 
-#Dataset
+# Dataset
 The dataset is then checked and verified for use.
 ```
 names(Feature_reduction_normalised)
@@ -26,7 +26,7 @@ head(Feature_reduction_normalised)
 summary(Feature_reduction_normalised)
 ```
 
-#Create random samples
+# Create random samples
 Random samples have to be created for training and testing each individual models as shown below (Logistic Regression, Classification Tree and Support Vector Machines).
 ```
 set.seed(123)
@@ -37,7 +37,7 @@ trainData <- Feature_reduction_normalised [train_sample,]
 testData <- Feature_reduction_normalised [-train_sample,]
 ```
 
-#Logistic Regression
+# Logistic Regression
 ```
 require(foreign)
 require(nnet)
@@ -56,7 +56,7 @@ logsregPred_test <- ifelse(testPred_logreg > 0.5,1,0)
 confusionMatrix(table(logsregPred_test, testData$label))
 ```
 
-#Classification Tree 
+# Classification Tree 
 ```
 library(party)
 trainData$label <- as.factor(trainData$label)
@@ -74,8 +74,8 @@ print(facial_ctree_test)
 confusionMatrix(table(predict(facial_ctree_test), testData$label))
 ```
 
-#Support Vector Machine (SVM)
-####Linear Support Vector Machine
+# Support Vector Machine (SVM)
+#### Linear Support Vector Machine
 ```
 library(e1071)
 library(gmodels)
@@ -103,7 +103,7 @@ CrossTable(testData$label,svm_pred_radial,prop.chisq= FALSE, prop.c= FALSE, prop
 confusionMatrix(table(svm_pred_radial, testData$label), mode = "prec_recall", positive = "1")
 ```
 
-####Sigmoid Support Vector Machine
+#### Sigmoid Support Vector Machine
 ```
 svm_classifier_sigmoid = svm(formula = label~., data = trainData, type= "C-classification", kernel = "sigmoid")
 svm_classifier_sigmoid
@@ -116,8 +116,8 @@ CrossTable(testData$label,svm_pred_sigmoid ,prop.chisq= FALSE, prop.c= FALSE, pr
 confusionMatrix(table(svm_pred_sigmoid, testData$label), mode = "prec_recall", positive = "1")
 ```
 
-#F1-score
-####F1-score (Logistic Regression)
+# F1-score
+#### F1-score (Logistic Regression)
 ```
 library(MLmetrics)
 facial_logreg <- glm(label ~., data = trainData, family = binomial, control = list(maxit = 50))
@@ -130,7 +130,7 @@ logsregPred_test <- ifelse(testPred_logreg > 0.5,1,0)
 F1_Score(y_pred = logsregPred_test, y_true = testData$label)
 ```
 
-####F1-score (Classification Tree)
+#### F1-score (Classification Tree)
 ```
 precision_ctree = (table(predict(facial_ctree_train), trainData$label)[2, "1"])/(table(predict(facial_ctree_train), trainData$label)[2, "1"]+table(predict(facial_ctree_train), trainData$label)[2, "0"])
 recall_ctree = (table(predict(facial_ctree_train), trainData$label)[2, "1"])/((table(predict(facial_ctree_train), trainData$label)[2, "1"])+(table(predict(facial_ctree_train), trainData$label)[1, "1"]))
@@ -146,7 +146,7 @@ F1_ctree_test <- ( 2* precision_ctree * recall_ctree) / (precision_ctree + recal
 F1_ctree_test
 ```
 
-####F1-score (Support Vector Machine - Radial kernel)
+#### F1-score (Support Vector Machine - Radial kernel)
 ```
 library(caret)
 x <- trainData$label
@@ -168,7 +168,7 @@ F1_svm_test <- ( 2* precision_svm * recall_svm) / (precision_svm + recall_svm)
 F1_svm_test
 ```
 
-#ROC curve
+# ROC curve
 ```
 library(ggplot2)
 library(ROCR)
@@ -193,7 +193,7 @@ plot(perf_svm_ROC, add = TRUE, col = 3)
        fill=topo.colors(3))
 ```
 
-#Speed Test
+# Speed Test
 Speed test is then used to determine how fast a model is able to perform as compated to the others.
 ```
 library(microbenchmark)
@@ -209,7 +209,7 @@ speed_test <- microbenchmark('logreg_spd ' = {glm(label ~., data = trainData, fa
 boxplot(speed_test, unit='ns',log=F,horizontal=T,col=topo.colors(3))
 ```
 
-#Logistic Regression (with 100% training data)
+# Logistic Regression (with 100% training data)
 ```
 require(foreign)
 require(nnet)
@@ -226,7 +226,7 @@ confusionMatrix(table(logsregPred_full, Feature_reduction_normalised$label))
 testPred_logreg <- predict(facial_logreg, newdata = testData, type = 'response')
 ```
 
-#Classification Tree (with 100% training data)
+# Classification Tree (with 100% training data)
 ```
 library(party)
 Feature_reduction_normalised$label <- as.factor(Feature_reduction_normalised$label)
